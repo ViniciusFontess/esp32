@@ -13,8 +13,8 @@
         }
         
         body {
-            background: #808080; /* Cinza sólido */
-            color: #333; /* Texto mais escuro para melhor contraste */
+            background: #808080;
+            color: #333;
             min-height: 100vh;
             padding: 20px;
         }
@@ -33,18 +33,18 @@
         h1 {
             font-size: 2.5rem;
             margin-bottom: 10px;
-            color: #2c3e50; /* Azul escuro para o título */
+            color: #2c3e50;
         }
         
         .description {
             font-size: 1.1rem;
-            color: #555; /* Cinza mais escuro */
+            color: #555;
             max-width: 600px;
             margin: 0 auto;
         }
         
         .card {
-            background: rgba(255, 255, 255, 0.9); /* Branco mais sólido */
+            background: rgba(255, 255, 255, 0.9);
             border-radius: 15px;
             padding: 25px;
             margin-bottom: 25px;
@@ -129,7 +129,7 @@
             font-size: 5rem;
             font-weight: bold;
             margin: 20px 0;
-            color: #2c3e50; /* Azul escuro para o valor */
+            color: #2c3e50;
         }
         
         .unit {
@@ -210,14 +210,20 @@
             animation: pulse 2s infinite;
         }
         
-        .simulation-notice {
-            background: rgba(255, 193, 7, 0.2);
-            border-left: 4px solid #ffc107;
-            padding: 10px;
-            margin-top: 15px;
-            border-radius: 4px;
-            font-size: 0.9rem;
-            color: #856404;
+        .progress-bar {
+            width: 100%;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 5px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.3s ease;
         }
         
         footer {
@@ -278,8 +284,11 @@
             <div class="distance-value"><span id="distanceValue">--</span><span class="unit">cm</span></div>
             <div class="timestamp">Última leitura: <span id="timestamp">Nenhuma leitura ainda</span></div>
             
-            <div class="simulation-notice" id="simulationNotice" style="display: none;">
-                Modo de simulação ativo: Dados estão sendo gerados aleatoriamente para teste.
+            <div class="progress-bar">
+                <div class="progress" id="progressBar"></div>
+            </div>
+            <div style="text-align: center; margin-top: 5px; color: #666; font-size: 0.9rem;">
+                Coletando amostras: <span id="sampleCount">0</span>/100
             </div>
         </div>
         
@@ -297,7 +306,8 @@
         const bleStateElement = document.getElementById('bleState');
         const statusIndicator = document.getElementById('statusIndicator');
         const signalElement = document.getElementById('signal');
-        const simulationNotice = document.getElementById('simulationNotice');
+        const progressBar = document.getElementById('progressBar');
+        const sampleCount = document.getElementById('sampleCount');
 
         // BLE Configuration
         const deviceName = 'ESP32-LIDAR';
@@ -309,7 +319,7 @@
         let bleServiceFound;
         let sensorCharacteristicFound;
         let isConnected = false;
-        let isSimulation = false;
+        let sampleCounter = 0;
 
         // Event Listeners
         connectButton.addEventListener('click', connectToDevice);
@@ -356,13 +366,11 @@
                 
                 updateConnectionStatus('Conectado', 'connected');
                 isConnected = true;
-                isSimulation = false;
                 signalElement.classList.add('pulse');
-                simulationNotice.style.display = 'none';
+                
             } catch (error) {
                 console.error('Erro:', error);
                 updateConnectionStatus('Erro de conexão', 'error');
-                simulateData();
             }
         }
 
@@ -375,35 +383,17 @@
             distanceValue.textContent = value;
             timestampElement.textContent = getCurrentDateTime();
             
+            // Atualiza o contador de amostras e a barra de progresso
+            sampleCounter = (sampleCounter % 100) + 1;
+            sampleCount.textContent = sampleCounter;
+            progressBar.style.width = sampleCounter + '%';
+            
             // Feedback visual
             signalElement.style.animation = 'none';
             setTimeout(() => {
                 signalElement.style.animation = null;
                 signalElement.classList.add('pulse');
             }, 10);
-        }
-
-        // Simulate data for demonstration
-        function simulateData() {
-            updateConnectionStatus('Modo Simulação', 'connected');
-            isConnected = true;
-            isSimulation = true;
-            signalElement.classList.add('pulse');
-            simulationNotice.style.display = 'block';
-            
-            // Gera valores aleatórios
-            setInterval(() => {
-                if (!isConnected || !isSimulation) return;
-                
-                const randomDistance = Math.floor(Math.random() * 150) + 50;
-                distanceValue.textContent = randomDistance;
-                timestampElement.textContent = getCurrentDateTime();
-                
-                signalElement.style.animation = 'none';
-                setTimeout(() => {
-                    signalElement.style.animation = null;
-                }, 10);
-            }, 1000);
         }
 
         // Disconnect from device
@@ -422,13 +412,14 @@
             console.log('Dispositivo desconectado');
             updateConnectionStatus('Desconectado', 'disconnected');
             isConnected = false;
-            isSimulation = false;
             signalElement.classList.remove('pulse');
-            simulationNotice.style.display = 'none';
             
             // Reseta os valores
             distanceValue.textContent = '--';
             timestampElement.textContent = 'Nenhuma leitura ainda';
+            sampleCounter = 0;
+            sampleCount.textContent = '0';
+            progressBar.style.width = '0%';
         }
 
         // Update connection status UI
