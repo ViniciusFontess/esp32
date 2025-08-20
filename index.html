@@ -1,222 +1,465 @@
-<!--
-  Rui Santos
-  Complete project details at https://RandomNerdTutorials.com/esp32-web-bluetooth/
-
-  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files.
-  The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
--->
-
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-    <title>ESP32 Web BLE App</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <link rel="icon" type="image/png" href="favicon.ico">
-    <link rel="stylesheet" type="text/css" href="style.css">
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medição de Distância - Sensor TF-Luna</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #808080; /* Cinza sólido */
+            color: #333; /* Texto mais escuro para melhor contraste */
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            padding: 20px 0;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #2c3e50; /* Azul escuro para o título */
+        }
+        
+        .description {
+            font-size: 1.1rem;
+            color: #555; /* Cinza mais escuro */
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.9); /* Branco mais sólido */
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+        
+        .connection-section {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .button-group {
+            display: flex;
+            gap: 15px;
+        }
+        
+        button {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 50px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+        }
+        
+        .connectButton {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .connectButton:hover {
+            background: #3e8e41;
+            transform: translateY(-2px);
+        }
+        
+        .disconnectButton {
+            background: #f44336;
+            color: white;
+        }
+        
+        .disconnectButton:hover {
+            background: #d32f2f;
+            transform: translateY(-2px);
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #d13a30;
+        }
+        
+        .connected {
+            background: #4CAF50;
+        }
+        
+        .connecting {
+            background: #ff9800;
+        }
+        
+        .error {
+            background: #f44336;
+        }
+        
+        .distance-display {
+            text-align: center;
+            padding: 40px 20px;
+        }
+        
+        .distance-value {
+            font-size: 5rem;
+            font-weight: bold;
+            margin: 20px 0;
+            color: #2c3e50; /* Azul escuro para o valor */
+        }
+        
+        .unit {
+            font-size: 2rem;
+            color: #666;
+            margin-left: 10px;
+        }
+        
+        .timestamp {
+            font-size: 1rem;
+            color: #666;
+            margin-top: 15px;
+        }
+        
+        .sensor-graphic {
+            width: 200px;
+            height: 200px;
+            margin: 0 auto;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .sensor-body {
+            width: 120px;
+            height: 120px;
+            background: radial-gradient(circle, #2c3e50, #1a1a1a);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .sensor-lens {
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, #7eb6ff, #0062cc);
+            border-radius: 50%;
+            position: relative;
+        }
+        
+        .sensor-lens::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 15px;
+            height: 15px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 50%;
+        }
+        
+        .signal {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: rgba(126, 182, 255, 0.7);
+            opacity: 0;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(4);
+                opacity: 0;
+            }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        .simulation-notice {
+            background: rgba(255, 193, 7, 0.2);
+            border-left: 4px solid #ffc107;
+            padding: 10px;
+            margin-top: 15px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            color: #856404;
+        }
+        
+        footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .connection-section {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .button-group {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .distance-value {
+                font-size: 3.5rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+        }
+    </style>
 </head>
 <body>
-    <div class="topnav">
-        <h1>ESP32 Web BLE Application</h1>
-    </div>
-    <div class="content">
-        <div class="card-grid">
-            <div class="card">
-                <p>
-                    <button id="connectBleButton" class="connectButton"> Connect to BLE Device</button>
-                    <button id="disconnectBleButton" class="disconnectButton"> Disconnect BLE Device</button>
-                </p>
-                <p class="gray-label">BLE state: <strong><span id="bleState" style="color:#d13a30;">Disconnected</span></strong></p>
+    <div class="container">
+        <header>
+            <h1>Medição de Distância com Sensor TF-Luna</h1>
+            <p class="description">Conecte-se via Bluetooth para receber medições em tempo real do sensor LIDAR</p>
+        </header>
+        
+        <div class="card connection-section">
+            <div class="button-group">
+                <button id="connectBleButton" class="connectButton">Conectar ao Sensor</button>
+                <button id="disconnectBleButton" class="disconnectButton">Desconectar</button>
+            </div>
+            <div class="status">
+                <div class="status-indicator" id="statusIndicator"></div>
+                <span id="bleState">Desconectado</span>
             </div>
         </div>
-        <div class="card-grid">
-            <div class="card">
-                <h2>Fetched Value</h2>
-                <p class="reading"><span id="valueContainer">NaN</span></p>
-                <p class="gray-label">Last reading: <span id="timestamp"></span></p>
+        
+        <div class="card distance-display">
+            <div class="sensor-graphic">
+                <div class="sensor-body">
+                    <div class="sensor-lens"></div>
+                </div>
+                <div class="signal" id="signal"></div>
             </div>
-
-            <div class="card">
-                <h2>Control GPIO 2</h2>
-                <button id="onButton" class="onButton">ON</button>
-                <button id="offButton" class="offButton">OFF</button>
-                <p class="gray-label">Last value sent: <span id="valueSent"></span></p>
+            
+            <h2>Distância Medida</h2>
+            <div class="distance-value"><span id="distanceValue">--</span><span class="unit">cm</span></div>
+            <div class="timestamp">Última leitura: <span id="timestamp">Nenhuma leitura ainda</span></div>
+            
+            <div class="simulation-notice" id="simulationNotice" style="display: none;">
+                Modo de simulação ativo: Dados estão sendo gerados aleatoriamente para teste.
             </div>
         </div>
+        
+        <footer>
+            <p>Sistema de medição por sensor TF-Luna via Web Bluetooth</p>
+        </footer>
     </div>
-    <div class="footer">
-        <p><a href="https://randomnerdtutorials.com/">Created by RandomNerdTutorials.com</a></p>
-        <p><a href="https://RandomNerdTutorials.com/esp32-web-bluetooth/">Read the full project here.</a></p>
-    </div>
-</body>
-<script>
-    // DOM Elements
-    const connectButton = document.getElementById('connectBleButton');
-    const disconnectButton = document.getElementById('disconnectBleButton');
-    const onButton = document.getElementById('onButton');
-    const offButton = document.getElementById('offButton');
-    const retrievedValue = document.getElementById('valueContainer');
-    const latestValueSent = document.getElementById('valueSent');
-    const bleStateContainer = document.getElementById('bleState');
-    const timestampContainer = document.getElementById('timestamp');
 
-    //Define BLE Device Specs
-    var deviceName ='ESP32';
-    var bleService = '19b10000-e8f2-537e-4f6c-d104768a1214';
-    var ledCharacteristic = '19b10002-e8f2-537e-4f6c-d104768a1214';
-    var sensorCharacteristic= '19b10001-e8f2-537e-4f6c-d104768a1214';
+    <script>
+        // DOM Elements
+        const connectButton = document.getElementById('connectBleButton');
+        const disconnectButton = document.getElementById('disconnectBleButton');
+        const distanceValue = document.getElementById('distanceValue');
+        const timestampElement = document.getElementById('timestamp');
+        const bleStateElement = document.getElementById('bleState');
+        const statusIndicator = document.getElementById('statusIndicator');
+        const signalElement = document.getElementById('signal');
+        const simulationNotice = document.getElementById('simulationNotice');
 
-    //Global Variables to Handle Bluetooth
-    var bleServer;
-    var bleServiceFound;
-    var sensorCharacteristicFound;
+        // BLE Configuration
+        const deviceName = 'ESP32-LIDAR';
+        const bleService = '19b10000-e8f2-537e-4f6c-d104768a1214';
+        const sensorCharacteristic = '19b10001-e8f2-537e-4f6c-d104768a1214';
 
-    // Connect Button (search for BLE Devices only if BLE is available)
-    connectButton.addEventListener('click', (event) => {
-        if (isWebBluetoothEnabled()){
-            connectToDevice();
-        }
-    });
+        // Global Variables
+        let bleServer;
+        let bleServiceFound;
+        let sensorCharacteristicFound;
+        let isConnected = false;
+        let isSimulation = false;
 
-    // Disconnect Button
-    disconnectButton.addEventListener('click', disconnectDevice);
+        // Event Listeners
+        connectButton.addEventListener('click', connectToDevice);
+        disconnectButton.addEventListener('click', disconnectDevice);
 
-    // Write to the ESP32 LED Characteristic
-    onButton.addEventListener('click', () => writeOnCharacteristic(1));
-    offButton.addEventListener('click', () => writeOnCharacteristic(0));
-
-    // Check if BLE is available in your Browser
-    function isWebBluetoothEnabled() {
-        if (!navigator.bluetooth) {
-            console.log('Web Bluetooth API is not available in this browser!');
-            bleStateContainer.innerHTML = "Web Bluetooth API is not available in this browser/device!";
-            return false
-        }
-        console.log('Web Bluetooth API supported in this browser.');
-        return true
-    }
-
-    // Connect to BLE Device and Enable Notifications
-    function connectToDevice(){
-        console.log('Initializing Bluetooth...');
-        navigator.bluetooth.requestDevice({
-            filters: [{name: deviceName}],
-            optionalServices: [bleService]
-        })
-        .then(device => {
-            console.log('Device Selected:', device.name);
-            bleStateContainer.innerHTML = 'Connected to device ' + device.name;
-            bleStateContainer.style.color = "#24af37";
-            device.addEventListener('gattservicedisconnected', onDisconnected);
-            return device.gatt.connect();
-        })
-        .then(gattServer =>{
-            bleServer = gattServer;
-            console.log("Connected to GATT Server");
-            return bleServer.getPrimaryService(bleService);
-        })
-        .then(service => {
-            bleServiceFound = service;
-            console.log("Service discovered:", service.uuid);
-            return service.getCharacteristic(sensorCharacteristic);
-        })
-        .then(characteristic => {
-            console.log("Characteristic discovered:", characteristic.uuid);
-            sensorCharacteristicFound = characteristic;
-            characteristic.addEventListener('characteristicvaluechanged', handleCharacteristicChange);
-            characteristic.startNotifications();
-            console.log("Notifications Started.");
-            return characteristic.readValue();
-        })
-        .then(value => {
-            console.log("Read value: ", value);
-            const decodedValue = new TextDecoder().decode(value);
-            console.log("Decoded value: ", decodedValue);
-            retrievedValue.innerHTML = decodedValue;
-        })
-        .catch(error => {
-            console.log('Error: ', error);
-        })
-    }
-
-    function onDisconnected(event){
-        console.log('Device Disconnected:', event.target.device.name);
-        bleStateContainer.innerHTML = "Device disconnected";
-        bleStateContainer.style.color = "#d13a30";
-
-        connectToDevice();
-    }
-
-    function handleCharacteristicChange(event){
-        const newValueReceived = new TextDecoder().decode(event.target.value);
-        console.log("Characteristic value changed: ", newValueReceived);
-        retrievedValue.innerHTML = newValueReceived;
-        timestampContainer.innerHTML = getDateTime();
-    }
-
-    function writeOnCharacteristic(value){
-        if (bleServer && bleServer.connected) {
-            bleServiceFound.getCharacteristic(ledCharacteristic)
-            .then(characteristic => {
-                console.log("Found the LED characteristic: ", characteristic.uuid);
-                const data = new Uint8Array([value]);
-                return characteristic.writeValue(data);
-            })
-            .then(() => {
-                latestValueSent.innerHTML = value;
-                console.log("Value written to LEDcharacteristic:", value);
-            })
-            .catch(error => {
-                console.error("Error writing to the LED characteristic: ", error);
-            });
-        } else {
-            console.error ("Bluetooth is not connected. Cannot write to characteristic.")
-            window.alert("Bluetooth is not connected. Cannot write to characteristic. \n Connect to BLE first!")
-        }
-    }
-
-    function disconnectDevice() {
-        console.log("Disconnect Device.");
-        if (bleServer && bleServer.connected) {
-            if (sensorCharacteristicFound) {
-                sensorCharacteristicFound.stopNotifications()
-                    .then(() => {
-                        console.log("Notifications Stopped");
-                        return bleServer.disconnect();
-                    })
-                    .then(() => {
-                        console.log("Device Disconnected");
-                        bleStateContainer.innerHTML = "Device Disconnected";
-                        bleStateContainer.style.color = "#d13a30";
-
-                    })
-                    .catch(error => {
-                        console.log("An error occurred:", error);
-                    });
-            } else {
-                console.log("No characteristic found to disconnect.");
+        // Check if Web Bluetooth is available
+        function isWebBluetoothEnabled() {
+            if (!navigator.bluetooth) {
+                alert('Web Bluetooth API não está disponível neste navegador!');
+                return false;
             }
-        } else {
-            // Throw an error if Bluetooth is not connected
-            console.error("Bluetooth is not connected.");
-            window.alert("Bluetooth is not connected.")
+            return true;
         }
-    }
 
-    function getDateTime() {
-        var currentdate = new Date();
-        var day = ("00" + currentdate.getDate()).slice(-2); // Convert day to string and slice
-        var month = ("00" + (currentdate.getMonth() + 1)).slice(-2);
-        var year = currentdate.getFullYear();
-        var hours = ("00" + currentdate.getHours()).slice(-2);
-        var minutes = ("00" + currentdate.getMinutes()).slice(-2);
-        var seconds = ("00" + currentdate.getSeconds()).slice(-2);
+        // Connect to BLE Device
+        async function connectToDevice() {
+            if (!isWebBluetoothEnabled()) return;
+            
+            console.log('Conectando ao dispositivo...');
+            try {
+                const device = await navigator.bluetooth.requestDevice({
+                    filters: [{ name: deviceName }],
+                    optionalServices: [bleService]
+                });
+                
+                console.log('Dispositivo selecionado:', device.name);
+                updateConnectionStatus('Conectando...', 'connecting');
+                
+                device.addEventListener('gattservicedisconnected', onDisconnected);
+                const server = await device.gatt.connect();
+                bleServer = server;
+                console.log("Conectado ao servidor GATT");
+                
+                const service = await server.getPrimaryService(bleService);
+                bleServiceFound = service;
+                console.log("Serviço descoberto:", service.uuid);
+                
+                const characteristic = await service.getCharacteristic(sensorCharacteristic);
+                sensorCharacteristicFound = characteristic;
+                console.log("Característica descoberta:", characteristic.uuid);
+                
+                await characteristic.startNotifications();
+                characteristic.addEventListener('characteristicvaluechanged', handleSensorData);
+                
+                updateConnectionStatus('Conectado', 'connected');
+                isConnected = true;
+                isSimulation = false;
+                signalElement.classList.add('pulse');
+                simulationNotice.style.display = 'none';
+            } catch (error) {
+                console.error('Erro:', error);
+                updateConnectionStatus('Erro de conexão', 'error');
+                simulateData();
+            }
+        }
 
-        var datetime = day + "/" + month + "/" + year + " at " + hours + ":" + minutes + ":" + seconds;
-        return datetime;
-    }
+        // Handle incoming sensor data
+        function handleSensorData(event) {
+            const value = new TextDecoder().decode(event.target.value);
+            console.log("Distância recebida:", value);
+            
+            // Atualiza a interface
+            distanceValue.textContent = value;
+            timestampElement.textContent = getCurrentDateTime();
+            
+            // Feedback visual
+            signalElement.style.animation = 'none';
+            setTimeout(() => {
+                signalElement.style.animation = null;
+                signalElement.classList.add('pulse');
+            }, 10);
+        }
 
+        // Simulate data for demonstration
+        function simulateData() {
+            updateConnectionStatus('Modo Simulação', 'connected');
+            isConnected = true;
+            isSimulation = true;
+            signalElement.classList.add('pulse');
+            simulationNotice.style.display = 'block';
+            
+            // Gera valores aleatórios
+            setInterval(() => {
+                if (!isConnected || !isSimulation) return;
+                
+                const randomDistance = Math.floor(Math.random() * 150) + 50;
+                distanceValue.textContent = randomDistance;
+                timestampElement.textContent = getCurrentDateTime();
+                
+                signalElement.style.animation = 'none';
+                setTimeout(() => {
+                    signalElement.style.animation = null;
+                }, 10);
+            }, 1000);
+        }
 
-</script>
+        // Disconnect from device
+        async function disconnectDevice() {
+            if (bleServer && bleServer.connected) {
+                if (sensorCharacteristicFound) {
+                    await sensorCharacteristicFound.stopNotifications();
+                    await bleServer.disconnect();
+                }
+            }
+            onDisconnected();
+        }
 
+        // Handle disconnection
+        function onDisconnected() {
+            console.log('Dispositivo desconectado');
+            updateConnectionStatus('Desconectado', 'disconnected');
+            isConnected = false;
+            isSimulation = false;
+            signalElement.classList.remove('pulse');
+            simulationNotice.style.display = 'none';
+            
+            // Reseta os valores
+            distanceValue.textContent = '--';
+            timestampElement.textContent = 'Nenhuma leitura ainda';
+        }
+
+        // Update connection status UI
+        function updateConnectionStatus(text, status) {
+            bleStateElement.textContent = text;
+            
+            // Remove todas as classes de status
+            statusIndicator.classList.remove('connected', 'connecting', 'error');
+            
+            // Adiciona a classe apropriada
+            if (status === 'connected') {
+                statusIndicator.classList.add('connected');
+            } else if (status === 'connecting') {
+                statusIndicator.classList.add('connecting');
+            } else if (status === 'error') {
+                statusIndicator.classList.add('error');
+            }
+        }
+
+        // Get current date and time
+        function getCurrentDateTime() {
+            return new Date().toLocaleString('pt-BR');
+        }
+
+        // Initial setup
+        window.addEventListener('load', () => {
+            if (!isWebBluetoothEnabled()) {
+                connectButton.disabled = true;
+                disconnectButton.disabled = true;
+            }
+        });
+    </script>
+</body>
 </html>
