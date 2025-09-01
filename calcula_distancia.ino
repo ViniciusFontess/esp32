@@ -17,7 +17,7 @@ bool oldDeviceConnected = false;
 #define SENSOR_CHARACTERISTIC_UUID "19b10001-e8f2-537e-4f6c-d104768a1214"
 
 uint32_t lastSensorReadTime = 0;
-const uint32_t sensorReadInterval = 2000; // Reduced interval for more responsive readings
+const uint32_t sensorReadInterval = 2000; 
 uint16_t failedReads = 0;
 const uint16_t maxFailedReads = 10;
 
@@ -37,7 +37,7 @@ void setupTFMini() {
   // Reset sensor configuration
   uint8_t resetCommand[] = {0x42, 0x57, 0x02, 0x00, 0x00, 0x00, 0x00, 0x41};
   lidarSerial.write(resetCommand, sizeof(resetCommand));
-  delay(1000);
+  delay(1000);  
   
   // Set offset to 0mm
   uint8_t setOffsetCommand[] = {0x42, 0x57, 0x02, 0x00, 0x08, 0x00, 0x00, 0xA3};
