@@ -11,7 +11,7 @@ HardwareSerial lidarSerial(2);
 
 // Altura fixa do sensor até o chão (em cm).
 // O cálculo será: Altura = 209 - Distância_Lida
-const uint16_t SENSOR_FIXED_HEIGHT_CM = 209;
+const uint16_t SENSOR_FIXED_HEIGHT_CM = 208;
 
 // --- Configuração BLE ---
 BLEServer* pServer = NULL;
