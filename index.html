@@ -1,322 +1,166 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Leitor de Distância TF-Luna</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
-        
-        body {
-            background-color: #808080;
-            color: #333;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-        
-        .container {
-            width: 100%;
-            max-width: 800px;
-            background-color: #f5f5f5;
-            border-radius: 15px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-            overflow: hidden;
-            margin-top: 20px;
-        }
-        
-        header {
-            background: linear-gradient(135deg, #2c3e50, #4a6491);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-        
-        h1 {
-            font-size: 2.2rem;
-            margin-bottom: 10px;
-        }
-        
-        .status {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-top: 10px;
-        }
-        
-        .status-indicator {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background-color: #ff4d4d;
-        }
-        
-        .status.connected .status-indicator {
-            background-color: #2ecc71;
-        }
-        
-        .display {
-            padding: 30px;
-            text-align: center;
-        }
-        
-        .distance-value {
-            font-size: 5rem;
-            font-weight: bold;
-            color: #2c3e50;
-            margin: 20px 0;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        
-        .unit {
-            font-size: 2rem;
-            color: #7f8c8d;
-            margin-left: 5px;
-        }
-        
-        .visualization {
-            width: 100%;
-            height: 200px;
-            background: linear-gradient(to top, #e0e0e0, #f5f5f5);
-            border-radius: 10px;
-            position: relative;
-            overflow: hidden;
-            margin: 30px 0;
-            border: 2px solid #bdc3c7;
-        }
-        
-        .object {
-            position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60px;
-            height: 60px;
-            background-color: #e74c3c;
-            border-radius: 50%;
-            box-shadow: 0 0 15px rgba(231, 76, 60, 0.5);
-        }
-        
-        .distance-line {
-            position: absolute;
-            bottom: 110px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 2px;
-            background-color: #3498db;
-            height: 0;
-            transition: height 0.5s ease;
-        }
-        
-        .distance-label {
-            position: absolute;
-            bottom: 100px;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: #3498db;
-            color: white;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-weight: bold;
-            opacity: 0;
-            transition: opacity 0.5s ease;
-        }
-        
-        .controls {
-            padding: 20px;
-            background-color: #e8e8e8;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-        
-        button {
-            padding: 12px 25px;
-            background: linear-gradient(135deg, #2c3e50, #4a6491);
-            color: white;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-        
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15);
-            background: linear-gradient(135deg, #4a6491, #2c3e50);
-        }
-        
-        button:active {
-            transform: translateY(0);
-        }
-        
-        .info {
-            padding: 15px;
-            text-align: center;
-            font-size: 0.9rem;
-            color: #7f8c8d;
-            background-color: #e8e8e8;
-        }
-        
-        @media (max-width: 600px) {
-            h1 {
-                font-size: 1.8rem;
-            }
-            
-            .distance-value {
-                font-size: 4rem;
-            }
-            
-            .visualization {
-                height: 150px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
+
+    <title>Medição de Altura</title>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Leitor de Distância TF-Luna</h1>
-            <div class="status">
-                <div class="status-indicator"></div>
-                <span id="status-text">Desconectado</span>
-            </div>
-        </header>
-        
+        <div class="top-bar" style="position:fixed;top:18px;right:32px;z-index:10;">
+            <button id="connect-btn" class="connect-btn-small">Conectar ao Sensor</button>
+        </div>
+        <h1>Medição de Altura</h1>
+        <div class="status">
+            <div class="status-indicator"></div>
+            <span id="status-text">Desconectado</span>
+        </div>
         <div class="display">
-            <h2>Distância Atual</h2>
+            <h2>Altura Atual</h2>
             <div class="distance-value"><span id="distance">--</span><span class="unit">cm</span></div>
-            
-            <div class="visualization">
-                <div class="object"></div>
-                <div class="distance-line" id="distance-line"></div>
-                <div class="distance-label" id="distance-label">0 cm</div>
-            </div>
         </div>
-        
-        <div class="controls">
-            <button id="connect-btn">Conectar ao Sensor</button>
-        </div>
-        
-        <div class="info">
-            <p>Conecte-se via Bluetooth para receber leituras em tempo real do sensor TF-Luna</p>
+        <div class="measure-center">
+            <button id="measure-btn" class="measure-btn-styled" disabled>Medir Altura</button>
         </div>
     </div>
-
+    <form id="alturaForm" action="/dados/altura_verif" method="post" style="display:none;">
+        <input type="hidden" name="altura" id="alturaInput">
+    </form>
     <script>
-        let connected = false;
-        let simulationInterval = null;
-        const connectBtn = document.getElementById('connect-btn');
-        const distanceElement = document.getElementById('distance');
-        const statusText = document.getElementById('status-text');
-        const statusIndicator = document.querySelector('.status-indicator');
-        const statusContainer = document.querySelector('.status');
-        const distanceLine = document.getElementById('distance-line');
-        const distanceLabel = document.getElementById('distance-label');
-        
-        function updateStatus(isConnected) {
-            connected = isConnected;
-            if (connected) {
-                statusText.textContent = 'Conectado';
-                statusContainer.classList.add('connected');
-                connectBtn.textContent = 'Desconectar';
-            } else {
-                statusText.textContent = 'Desconectado';
-                statusContainer.classList.remove('connected');
-                connectBtn.textContent = 'Conectar ao Sensor';
-                stopSimulation();
-            }
+    let connected = false;
+    let lastMeasurement = null;
+    let characteristic = null;
+    const SERVICE_UUID = '19b10000-e8f2-537e-4f6c-d104768a1214';
+    const CHAR_UUID = '19b10001-e8f2-537e-4f6c-d104768a1214';
+    const connectBtn = document.getElementById('connect-btn');
+    const measureBtn = document.getElementById('measure-btn');
+    const distanceElement = document.getElementById('distance');
+    const statusText = document.getElementById('status-text');
+    const statusIndicator = document.querySelector('.status-indicator');
+    const statusContainer = document.querySelector('.status');
+
+    function updateStatus(isConnected) {
+        connected = isConnected;
+        if (connected) {
+            statusText.textContent = 'Conectado';
+            statusContainer.classList.add('connected');
+            connectBtn.textContent = 'Desconectar';
+            measureBtn.disabled = false;
+        } else {
+            statusText.textContent = 'Desconectado';
+            statusContainer.classList.remove('connected');
+            connectBtn.textContent = 'Conectar ao Sensor';
+            measureBtn.disabled = true;
+            distanceElement.textContent = '--';
         }
-        
-        function updateDistance(value) {
-            distanceElement.textContent = value;
-            
-            // Atualizar a visualização
-            const maxHeight = 180; // Altura máxima da linha em pixels
-            const maxDistance = 500; // Distância máxima em cm para a escala
-            
-            // Calcular a altura da linha (limitada a 90% do máximo)
-            let height = Math.min((value / maxDistance) * maxHeight, maxHeight * 0.9);
-            distanceLine.style.height = `${height}px`;
-            
-            // Atualizar o rótulo
-            distanceLabel.textContent = `${value} cm`;
-            distanceLabel.style.opacity = value > 0 ? '1' : '0';
-            distanceLabel.style.bottom = `${100 + height}px`;
-        }
-        
-        function connect() {
-            if (connected) {
-                // Desconectar
-                updateStatus(false);
-                return;
+    }
+
+    let bluetoothDevice = null;
+    function connect() {
+        if (connected) {
+            // Desconectar
+            if (characteristic) {
+                try {
+                    characteristic.removeEventListener('characteristicvaluechanged', handleData);
+                    characteristic.stopNotifications();
+                } catch (e) {}
             }
-            
-            console.log('Procurando dispositivo...');
-            navigator.bluetooth.requestDevice({
-                filters: [{
-                    name: 'ESP32-LIDAR'
-                }],
-                optionalServices: ['19b10000-e8f2-537e-4f6c-d104768a1214']
-            })
-            .then(device => {
-                console.log('Conectando...');
-                return device.gatt.connect();
-            })
-            .then(server => {
-                console.log('Obtendo serviço...');
-                return server.getPrimaryService('19b10000-e8f2-537e-4f6c-d104768a1214');
-            })
-            .then(service => {
-                console.log('Obtendo característica...');
-                return service.getCharacteristic('19b10001-e8f2-537e-4f6c-d104768a1214');
-            })
-            .then(characteristic => {
-                console.log('Conectado!');
-                updateStatus(true);
-                
+            if (bluetoothDevice && bluetoothDevice.gatt.connected) {
+                bluetoothDevice.gatt.disconnect();
+            }
+            characteristic = null;
+            bluetoothDevice = null;
+            lastMeasurement = null;
+            updateStatus(false);
+            return;
+        }
+        navigator.bluetooth.requestDevice({
+            // Usa filtro por serviço para garantir descoberta, mesmo se o nome variar
+            filters: [
+                { services: [SERVICE_UUID] },
+                { namePrefix: 'ESP32' },
+                { name: 'ESP32-LIDAR' }
+            ],
+            optionalServices: [SERVICE_UUID]
+        })
+        .then(device => {
+            bluetoothDevice = device;
+            // auto-reconexão se desconectar inesperadamente
+            bluetoothDevice.addEventListener('gattserverdisconnected', tryReconnect);
+            return device.gatt.connect();
+        })
+        .then(server => server.getPrimaryService(SERVICE_UUID))
+        .then(service => service.getCharacteristic(CHAR_UUID))
+        .then(char => {
+            updateStatus(true);
+            characteristic = char;
+            characteristic.addEventListener('characteristicvaluechanged', handleData);
+            return characteristic.startNotifications();
+        })
+        .catch(error => {
+            console.error('Erro BLE:', error);
+            alert('Falha na conexão. Verifique se o dispositivo está disponível e se o navegador tem permissão para usar Bluetooth.');
+        });
+    }
+
+    let reconnectAttempts = 0;
+    function tryReconnect() {
+        if (!bluetoothDevice) return;
+        updateStatus(false);
+        if (reconnectAttempts >= 3) return; // evita loop infinito
+        reconnectAttempts++;
+        setTimeout(() => {
+            bluetoothDevice.gatt.connect()
+            .then(server => server.getPrimaryService(SERVICE_UUID))
+            .then(service => service.getCharacteristic(CHAR_UUID))
+            .then(char => {
+                reconnectAttempts = 0;
+                characteristic = char;
                 characteristic.addEventListener('characteristicvaluechanged', handleData);
+                updateStatus(true);
                 return characteristic.startNotifications();
             })
-            .catch(error => {
-                console.log('Erro: ' + error);
-                alert('Falha na conexão. Verifique se o dispositivo está disponível.');
-            });
+            .catch(err => console.warn('Tentativa de reconexão falhou:', err));
+        }, 1000 * reconnectAttempts);
+    }
+
+    function handleData(event) {
+        let value = new TextDecoder().decode(event.target.value);
+        try {
+            let data = JSON.parse(value);
+            lastMeasurement = data.distance;
+        } catch (e) {
+            let num = parseFloat(value);
+            if (!isNaN(num)) lastMeasurement = num;
         }
-        
-        function handleData(event) {
-            let value = new TextDecoder().decode(event.target.value);
-            try {
-                let data = JSON.parse(value);
-                    updateDistance(data.distance);
-            } catch (e) {
-                console.log('Erro ao analisar JSON: ' + e);
-            }
+    }
+
+    connectBtn.onclick = connect;
+
+    measureBtn.onclick = function() {
+        if (lastMeasurement !== null && connected) {
+            distanceElement.textContent = lastMeasurement;
+        } else {
+            distanceElement.textContent = '--';
         }
-        
-        
-        // Configurar event listeners
-        connectBtn.addEventListener('click', connect);
-        
-        // Verificar suporte a Bluetooth
-        window.onload = function() {
-            if (!navigator.bluetooth) {
-                alert('Seu navegador não suporta Web Bluetooth. Tente usar Chrome ou Edge.');
-                connectBtn.disabled = true;
-            }
-        };
+    };
+
+    window.onload = function() {
+        if (!navigator.bluetooth) {
+            alert('Seu navegador não suporta Web Bluetooth. Tente usar Chrome ou Edge.');
+            connectBtn.disabled = true;
+            measureBtn.disabled = true;
+            return;
+        }
+        // Web Bluetooth requer contexto seguro (HTTPS) ou localhost
+        const isSecure = location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1';
+        if (!isSecure) {
+            console.warn('Para usar Web Bluetooth, sirva a página via HTTPS ou localhost.');
+            alert('Para usar Bluetooth no navegador, abra esta página via HTTPS ou em localhost (ex.: http://localhost:8080).');
+        }
+    };
     </script>
 </body>
 </html>
