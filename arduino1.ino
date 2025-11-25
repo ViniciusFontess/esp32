@@ -26,7 +26,7 @@ bool calibrarEmAndamento = false;
 
 class CommandCallbacks: public BLECharacteristicCallbacks {
     void onWrite(BLECharacteristic *pCharacteristic) {
-      std::string receivedValue = pCharacteristic->getValue();
+      String receivedValue = pCharacteristic->getValue();
       
       if (receivedValue.length() > 0) {
         // Corrigido: Converter std::string para String do Arduino corretamente
